@@ -94,5 +94,61 @@ frappe.ui.form.on('Purchase Order Item', {
         };
 
         d.show();
+    },
+});
+frappe.ui.form.on("Purchase Order", {
+    // Trigger on item_code change in the child table
+    item_code: function(frm, cdt, cdn) {
+        const row = locals[cdt][cdn];
+        fetchAndSetDataForItem(frm, row);
+    },
+    
+    // Trigger on transaction_date change in the main form
+    transaction_date: function(frm) {
+        frm.doc.items.forEach(row => {
+            fetchAndSetDataForItem(frm, row);
+        });
+    },
+
+    // Trigger on form validate
+    validate: function(frm) {
+        frm.doc.items.forEach(row => {
+            fetchAndSetDataForItem(frm, row);
+        });
     }
 });
+
+function fetchAndSetDataForItem(frm, row) {
+    const today = frm.doc.transaction_date;
+    const days_ago = {
+        7: frappe.datetime.add_days(today, -7),
+        15: frappe.datetime.add_days(today, -15),
+        30: frappe.datetime.add_days(today, -30)
+    };
+
+    // Function to fetch data and set it in the row fields
+    const fetchAndSetData = (days) => {
+        frappe.call({
+            method: "nxtgen.nxtgen.doc_events.purchase_order.get_sales_data",
+            args: {
+                item_code: row.item_code,
+                from_date: days_ago[days],
+                to_date: today
+            },
+            callback: function(response) {
+                if (response.message) {
+                    const data = response.message;
+                    if (days === "7") {
+                        frappe.model.set_value(row.doctype, row.name, "qty_in_last_7_days", data.total_qty || 0);
+                    } else if (days === "15") {
+                        frappe.model.set_value(row.doctype, row.name, "qty_in_last_15_days", data.total_qty || 0);
+                    } else if (days === "30") {
+                        frappe.model.set_value(row.doctype, row.name, "qty_in_last_30_days", data.total_qty || 0);
+                    }
+                }
+            }
+        });
+    };
+
+    ["7", "15", "30"].forEach(fetchAndSetData);
+}

@@ -129,7 +129,14 @@ doctype_js = {"Purchase Order" : "public/js/purchase_order.js"}
 # 		"on_trash": "method"
 # 	}
 # }
-
+fixtures = [
+    {
+        "dt": "Custom Field",
+        "filters": {"module": ["in", ["Nxtgen"]]},
+        "dt": "Property Setter",
+        "filters":{"module": ["in", ["Nxtgen"]]}
+    }
+]
 # Scheduled Tasks
 # ---------------
 
