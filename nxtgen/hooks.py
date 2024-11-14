@@ -234,3 +234,6 @@ fixtures = [
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
 
+page_js = {
+    "point-of-sale" : "nxtgen/page_overide/point_of_sale/pos_item_details.js",
+}
