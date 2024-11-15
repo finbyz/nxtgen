@@ -139,6 +139,7 @@ erpnext.PointOfSale.ItemDetails = class {
 				if (db_pricing_rules.length === 0) {
 					table += `<tr><td colspan="3">${__("No Pricing Rules Found")}</td></tr>`;
 				} else {
+					let applied_rules = [];
 					for (let rule of db_pricing_rules) {
 						let checked = pricing_rules.includes(rule.name) ? "checked" : "";
 						const checkboxId = `pricing_rule_checkbox_${rule.name}`;
@@ -150,6 +151,8 @@ erpnext.PointOfSale.ItemDetails = class {
 								<td align="center">${rule.name}</td>
 								<td align="center">${rule.discount_amount || rule.rate || rule.discount_percentage * item.base_price_list_rate / 100}</td>
 							</tr>`;
+						applied_rules.push(rule.name);
+						this.$item_price.attr('pricing_rules', JSON.stringify(applied_rules));
 					}
 				}
 				table += `
@@ -159,6 +162,7 @@ erpnext.PointOfSale.ItemDetails = class {
 				this.$pricing_rule_table.html(table);
 	
 				this.$pricing_rule_table.find('.pricing-rule-checkbox').off().on('change', (event) => {
+					let cart_frm = window.cur_pos.cart.events.get_frm()
 					const checkbox = $(event.currentTarget);
 					const ruleName = checkbox.data('rule-name');
 					const isChecked = checkbox.is(':checked');
@@ -168,24 +172,48 @@ erpnext.PointOfSale.ItemDetails = class {
 						if (!pricing_rules.includes(ruleName)) {
 							pricing_rules.push(ruleName);
 							item.discount_amount += discount;
+							this.$item_price.attr('pricing_rules', JSON.stringify(pricing_rules));
 						}
 					} else {
 						pricing_rules = pricing_rules.filter(name => name !== ruleName);
 						item.discount_amount -= discount;
+						this.$item_price.attr('pricing_rules', JSON.stringify(pricing_rules));
 					}
 					item.pricing_rules = JSON.stringify(pricing_rules);
 					frappe.model.set_value(item.doctype, item.name, 'pricing_rules', item.pricing_rules);
-					this.price_list_rate_control.set_value(item.base_price_list_rate - item.discount_amount);
+					let actual_discounted_rate = 0;
+					let applied_rules = JSON.parse(item.pricing_rules) || [];
+					console.log(`${applied_rules} rules applied`)
+					if(applied_rules.length == 0){
+						actual_discounted_rate = 0;
+					}else{
+						for(let db_rule of db_pricing_rules){
+							if(applied_rules.includes(db_rule.name)){
+								let discount = db_rule.discount_amount || db_rule.rate || db_rule.discount_percentage * item.base_price_list_rate / 100;
+								actual_discounted_rate += discount;
+							}
+						}
+					}
+					console.log(`${actual_discounted_rate} actual discounted rate`)
+					this.price_list_rate_control.set_value(item.base_price_list_rate - item.discount_amount).then(() => {
+						setTimeout(() => {
+							this.$item_price.html(format_currency(item.base_price_list_rate - actual_discounted_rate, this.currency));
+							console.log(`item.price set to ${item.base_price_list_rate - actual_discounted_rate}`)
+						}, 500);
+					});
 					let discount_percentage = (item.discount_amount / item.base_price_list_rate * 100).toFixed(2);
 					let frm = this.events.get_frm();
-					for (let item of frm.doc.items) {
-						item.net_amount = (item.base_price_list_rate - item.discount_amount)*item.qty;
-					}
+					item.net_amount = (item.base_price_list_rate - item.discount_amount)*item.qty;
 					frm.doc.grand_total = frm.doc.items.reduce((acc, item) => acc + item.net_amount, 0);
 					frm.doc.net_total = frm.doc.grand_total;
 					frm.refresh_fields();
 					this.discount_percentage_control && this.discount_percentage_control.set_value(discount_percentage);
-					this.price_list_rate_control.set_value(item.price_list_rate);
+					this.price_list_rate_control.set_value(item.price_list_rate).then(() => {
+						setTimeout(() => {
+							this.$item_price.html(format_currency(item.base_price_list_rate - actual_discounted_rate, this.currency));
+							console.log(`item.price set to ${item.base_price_list_rate - actual_discounted_rate}`)
+						}, 500);
+					});
 					let item_node = window.cur_pos.cart.get_cart_item(item)
 					item_node.find(".item-rate").text(format_currency(`${item.net_amount}`, this.currency));
 					window.cur_pos.cart.render_grand_total(frm.doc.grand_total);
