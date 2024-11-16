@@ -151,7 +151,7 @@ erpnext.PointOfSale.ItemDetails = class {
 								<td align="center">${rule.name}</td>
 								<td align="center">${rule.discount_amount || rule.rate || rule.discount_percentage * item.base_price_list_rate / 100}</td>
 							</tr>`;
-						applied_rules.push(rule.name);
+						checked && applied_rules.push(rule.name);
 						this.$item_price.attr('pricing_rules', JSON.stringify(applied_rules));
 					}
 				}
