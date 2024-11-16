@@ -198,25 +198,26 @@ erpnext.PointOfSale.ItemDetails = class {
 					this.price_list_rate_control.set_value(item.base_price_list_rate - item.discount_amount).then(() => {
 						setTimeout(() => {
 							this.$item_price.html(format_currency(item.base_price_list_rate - actual_discounted_rate, this.currency));
+							let item_node = window.cur_pos.cart.get_cart_item(item)
+							let net_amount = (item.base_price_list_rate - actual_discounted_rate)*item.qty;
+							item_node.find(".item-rate").text(format_currency(`${net_amount}`, this.currency));
 							console.log(`item.price set to ${item.base_price_list_rate - actual_discounted_rate}`)
 						}, 500);
 					});
 					let discount_percentage = (item.discount_amount / item.base_price_list_rate * 100).toFixed(2);
 					let frm = this.events.get_frm();
-					item.net_amount = (item.base_price_list_rate - item.discount_amount)*item.qty;
-					frm.doc.grand_total = frm.doc.items.reduce((acc, item) => acc + item.net_amount, 0);
-					frm.doc.net_total = frm.doc.grand_total;
+					item.net_amount = (item.base_price_list_rate - actual_discounted_rate)*item.qty;
 					frm.refresh_fields();
 					this.discount_percentage_control && this.discount_percentage_control.set_value(discount_percentage);
 					this.price_list_rate_control.set_value(item.price_list_rate).then(() => {
 						setTimeout(() => {
 							this.$item_price.html(format_currency(item.base_price_list_rate - actual_discounted_rate, this.currency));
+							let item_node = window.cur_pos.cart.get_cart_item(item)
+							let net_amount = (item.base_price_list_rate - actual_discounted_rate)*item.qty;
+							item_node.find(".item-rate").text(format_currency(`${net_amount}`, this.currency));
 							console.log(`item.price set to ${item.base_price_list_rate - actual_discounted_rate}`)
 						}, 500);
 					});
-					let item_node = window.cur_pos.cart.get_cart_item(item)
-					item_node.find(".item-rate").text(format_currency(`${item.net_amount}`, this.currency));
-					window.cur_pos.cart.render_grand_total(frm.doc.grand_total);
 				});
 			});
 		} else {
