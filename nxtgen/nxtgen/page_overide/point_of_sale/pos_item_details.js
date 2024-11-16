@@ -123,7 +123,7 @@ erpnext.PointOfSale.ItemDetails = class {
 				<div>Note: You can change or apply pricing rules just before checkout</div>
 				<table class="pricing-rule-table" border="1" width="100%">
 					<thead>	
-						<tr>
+						<tr style = "text-align: center;">
 							<th align="center" width="10%">${__("Apply")}</th>
 							<th align="center" width="45%">${__("Rule")}</th>
 							<th align="center" width="45%">${__("Discount Amount")}</th>
@@ -135,7 +135,7 @@ erpnext.PointOfSale.ItemDetails = class {
 	
 			let pricing_rules = JSON.parse(item.pricing_rules || '[]');
 	
-			frappe.db.get_list("Pricing Rule", { fields: ['name', 'discount_amount',"rate","discount_percentage"] }).then((db_pricing_rules) => {
+			frappe.db.get_list("Pricing Rule", { fields: ['name', 'title','discount_amount',"rate","discount_percentage"] }).then((db_pricing_rules) => {
 				if (db_pricing_rules.length === 0) {
 					table += `<tr><td colspan="3">${__("No Pricing Rules Found")}</td></tr>`;
 				} else {
@@ -148,7 +148,7 @@ erpnext.PointOfSale.ItemDetails = class {
 								<td align="center">
 									<input type="checkbox" ${checked} id="${checkboxId}" data-rule-name="${rule.name}" class="pricing-rule-checkbox">
 								</td>
-								<td align="center">${rule.name}</td>
+								<td align="center">${rule.title}</td>
 								<td align="center">${rule.discount_amount || rule.rate || rule.discount_percentage * item.base_price_list_rate / 100}</td>
 							</tr>`;
 						checked && applied_rules.push(rule.name);
