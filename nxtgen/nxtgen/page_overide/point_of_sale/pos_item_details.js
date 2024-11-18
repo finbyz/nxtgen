@@ -142,6 +142,9 @@ erpnext.PointOfSale.ItemDetails = class {
 					let applied_rules = [];
 					for (let rule of db_pricing_rules) {
 						let checked = pricing_rules.includes(rule.name) ? "checked" : "";
+						if(!checked){
+							continue;
+						}
 						const checkboxId = `pricing_rule_checkbox_${rule.name}`;
 						table += `
 							<tr>
