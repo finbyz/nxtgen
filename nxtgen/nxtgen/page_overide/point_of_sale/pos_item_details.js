@@ -132,8 +132,11 @@ erpnext.PointOfSale.ItemDetails = class {
 					<tbody>
 			`;
 			this.$pricing_rule_table.empty();
-	
 			let pricing_rules = JSON.parse(item.pricing_rules || '[]');
+			
+			if(!item.applied_rules){
+				item.applied_rules = pricing_rules
+			}
 	
 			frappe.db.get_list("Pricing Rule", { fields: ['name', 'title','discount_amount',"rate","discount_percentage"] }).then((db_pricing_rules) => {
 				if (db_pricing_rules.length === 0) {
@@ -142,7 +145,7 @@ erpnext.PointOfSale.ItemDetails = class {
 					let applied_rules = [];
 					for (let rule of db_pricing_rules) {
 						let checked = pricing_rules.includes(rule.name) ? "checked" : "";
-						if(!checked){
+						if(!checked && !item.applied_rules.includes(rule.name)){
 							continue;
 						}
 						const checkboxId = `pricing_rule_checkbox_${rule.name}`;
